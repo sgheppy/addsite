@@ -3,20 +3,48 @@
 # usage: $0 <sitename>
 #
 
-SITENAME=$1
+help() {
+cat <<EOF
+$0 [-d][-h] FQND_SITE
+  -d create mysql database with username
+  -h print this help
+
+Questo script crea un utente con home in directory /var/www/ e con nome pari al dominio di terzo livello del sito specificato
+In più crea il file di configurazione del virtualhost associato, lo abilita ed esegue il reload del servizio apache2
+
+Se specificato crea Utenze e Database del relativo sito.
+
+Esempio:
+
+$0 -d sitename.domain.it
+
+crea :
+user -> sitename
+home -> /var/www/site_sitename.domain.it/ ed inoltre la cartella /var/www/site_sitename.domain.it/sitename.domain.it/ ## NB il sito sarà ospitato solo nell'ultima cartella specificata
+password -> generata di 8 caratteri specificata a fine script  
+virtualhost -> /etc/apache2/sites-available/sitename.domain.it
+
+MYSQL
+
+user -> sitename troncato a 14 caratteri seguito da due interi casuali
+password -> stessa password generata per l'utente posix
+database name -> sitename
+
+
+EOF
+}
 
 genpasswd() {
     local PWD_LENGHT=$1
     
     [ "$PWD_LENGHT" == "" ] && PWD_LENGHT=16
     tr -dc A-Za-z0-9_ < /dev/urandom | head -c $PWD_LENGHT | xargs
-
 }
 
 write_virtualhost() {
     local SITE_FQDN=${1}
     local SITE=$(echo $SITE_FQDN | cut -d. -f1)
-    echo -e "Creating virtualhost ${SITE_FQDN}.dhitech.it ... \n"
+    echo -e "Creating virtualhost ${SITE_FQDN} ... \n"
     cat <<EOF > /etc/apache2/sites-available/${SITE_FQDN}.dhitech.it
 <VirtualHost *:80>
         ServerName  ${SITE_FQDN}.dhitech.it
@@ -77,8 +105,6 @@ while getopts "hvd" flag; do
     case "$flag" in
 	h)help
 	    ;;
-	v)wvirtualhost=1
-	    ;;
 	d)cdatabase=1
 	    ;;
 
@@ -120,10 +146,7 @@ chmod g+w /var/www/site_${SITE_FQDN}/${SITE_FQDN}
 ## Trucco per bug vsftpd
 chmod -w /var/www/site_${SITE_FQDN}
 
-if [ $wvirtualhost -eq 1 ]
-    then
-    write_virtualhost $user
-fi
+write_virtualhost $SITE_FQDN
 
 if [ $cdatabase -eq 1 ]
     then
