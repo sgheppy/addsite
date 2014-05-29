@@ -22,7 +22,7 @@ yornorq() {
  
   until [[ "$ans" == [ynq] ]]
   do
-    read -s  -n1 ans
+    read  ans
   done
  
   echo -n "$ans"
@@ -52,7 +52,7 @@ write_virtualhost() {
 	fi
     fi
 
-    echo -e "Creating virtualhost ${SITE_FQDN} ... \n"
+    echo "Creating virtualhost ${SITE_FQDN}..."
 
     cat <<EOF > /etc/apache2/sites-available/${SITE_FQDN}
 <VirtualHost *:80>
@@ -83,8 +83,6 @@ EOF
     if [ -f  "/etc/apache2/sites-enabled/${SITE_FQDN}" ]; then
 	echo "Site virtualhost already enabled." 
     else
-	echo "Enabling site virtualhost"
-
 	a2ensite $SITE_FQDN
 
 	echo "Reload Apache?"
@@ -102,7 +100,7 @@ EOF
 
 
 create_database() {
-    echo -e "Create Database... \n"
+    echo  "Create Database..."
     local USER=${1:0:13}$(( $RANDOM % 99 ))
     local PASSWORD=$2
     local DBNAME=$1
@@ -133,13 +131,13 @@ EOF
     Q2="GRANT ALL PRIVILEGES ON ${DBNAME}.* TO ${USER}@localhost IDENTIFIED BY '${PASSWORD}' ;"
     Q3="FLUSH PRIVILEGES;"
     SQL="${Q1}${Q2}${Q3}"
-    echo -e "Insert MySQL root password... \n"
+    echo -e "Insert MySQL root password..."
 
     local COUNTER=1
     $MYSQL -uroot --password  -e "$SQL"
     while [ $? -ne 0 -a $COUNTER -lt 3 ]
     do
-	echo -e "Insert MySQL root password... \n"
+	echo -e "Insert MySQL root password..."
 	(( COUNTER+=1 ))
 	$MYSQL -u root --password  -e "$SQL"
     done
@@ -182,7 +180,7 @@ SITE_FQDN=${@:$OPTIND}
 if [ $( grep $user /etc/passwd|awk -F : '{print $user}' ) ]; then
     echo "ERROR: User $user already exists. Do you want to continue?" 
 
-    read -sn1 ANSWER
+    read ANSWER
     if [  $ANSWER != "y" -a $ANSWER != "Y" ]; then
 	echo "Finish."
 	exit 0
