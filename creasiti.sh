@@ -66,20 +66,20 @@ write_virtualhost() {
 
         DocumentRoot /var/www/site_${SITE_FQDN}/${SITE_FQDN}
 
-        <Directory /var/www/site_${SITE_FQDN}.dhitech.it/${SITE_FQDN}.dhitech.it>
+        <Directory /var/www/site_${SITE_FQDN}/${SITE_FQDN}>
                 Options Indexes FollowSymLinks MultiViews
                 AllowOverride All
                 Order allow,deny
                 allow from all
         </Directory>
 
-        ErrorLog ${APACHE_LOG_DIR}/${SITE}_dhitech_it_error.log
+        ErrorLog ${APACHE_LOG_DIR}/${SITE}_error.log
 
         # Possible values include: debug, info, notice, warn, error, crit,
         # alert, emerg.
         LogLevel warn
 
-        CustomLog ${APACHE_LOG_DIR}/${SITE}_dhitech_it_access.log combined
+        CustomLog ${APACHE_LOG_DIR}/${SITE}_access.log combined
 </VirtualHost>
 EOF
     if [ -f  "/etc/apache2/sites-enabled/${SITE_FQDN}" ]; then
