@@ -2,12 +2,15 @@
 #
 # usage: $0 <sitename>
 #
-
+#    -d create mysql database with user
+#    -h print this help
+#
 help() {
 cat <<EOF
 $0 [-d][-h] FQND_SITE
-  -d create mysql database with username
-  -h print this help
+  
+     -d create mysql database with user
+     -h print this help
 
 EOF
 
@@ -15,18 +18,16 @@ exit 0
 }
 
 yornorq() {
- 
-  echo -n "${1:-Press Y or N to continue, Q to quit: }"
- 
   shopt -s nocasematch
- 
   until [[ "$ans" == [ynq] ]]
   do
     read  ans
   done
- 
-  echo -n "$ans"
+  if [  "$ANSWER" = "q" ]; then
+      exit 0
+  fi
 
+  echo -n "$ans"
   shopt -u nocasematch
 }
 
@@ -41,14 +42,12 @@ write_virtualhost() {
     local SITE_FQDN=${1}
     local SITE=$(echo $SITE_FQDN | cut -d. -f1)
     if [ -f  "/etc/apache2/sites-available/${SITE_FQDN}" ]; then
-	echo "Virtualhost file ${SITE_FQDN} already exists.  Do you want to overwrite it?" 
-	local ANSWER="$(yornorq | tail -c 1)"
+	echo "Virtualhost file ${SITE_FQDN} already exists.  Do you want to overwrite it? " 
+	echo -n "Press Y or N to continue, Q to quit: "
 
+	local ANSWER="$(yornorq | tail -c 1)"
 	if [  "$ANSWER" = "n" ]; then
 	    return
-	fi
-	if [  "$ANSWER" = "q" ]; then
-	    exit 0
 	fi
     fi
 
@@ -108,25 +107,23 @@ create_database() {
 #    E_BADARGS=65
     cat <<EOF >>/tmp/creasiti_finalprint
 ##### MYSQL USER E DATABASE #####
- DB USER = $USER
- DB PASSWORD = $PASSWORD
- DB NAME = $DBNAME
+
+ DB USER =      $USER
+ DB PASSWORD =  $PASSWORD
+ DB NAME =      $DBNAME
+
 #################################
+
 EOF
 
-cat <<EOF
-Attenzione! Non so controllare se l'utente mysql o il database che verranno creati esistono già!
-Proseguo?
-EOF
+    echo "I can not check if the user or the mysql database that will be created already exist! Continue?"
+    echo -n "Press Y or N to continue, Q to quit: "
+    local ANSWER="$(yornorq | tail -c 1)"
+    if [ $ANSWER = "n" ]; then
+	exit 0
+    fi
 
-	local ANSWER="$(yornorq | tail -c 1)"
-
-	if [  $ANSWER = "q" -o $ANSWER = "n" ]; then
-	    exit 0
-	fi
-    echo -e 
     MYSQL=$(which mysql)
-    
     Q1="CREATE DATABASE IF NOT EXISTS \`${DBNAME}\`;"
     Q2="GRANT ALL PRIVILEGES ON ${DBNAME}.* TO ${USER}@localhost IDENTIFIED BY '${PASSWORD}' ;"
     Q3="FLUSH PRIVILEGES;"
@@ -137,7 +134,7 @@ EOF
     $MYSQL -uroot --password  -e "$SQL"
     while [ $? -ne 0 -a $COUNTER -lt 3 ]
     do
-	echo -e "Insert MySQL root password..."
+	echo "Insert MySQL root password..."
 	(( COUNTER+=1 ))
 	$MYSQL -u root --password  -e "$SQL"
     done
@@ -178,8 +175,7 @@ user=( "$( echo ${@:$OPTIND} | cut -d. -f 1 )" );
 SITE_FQDN=${@:$OPTIND}
 
 if [ $( grep $user /etc/passwd|awk -F : '{print $user}' ) ]; then
-    echo "ERROR: User $user already exists. Do you want to continue?" 
-
+    echo -n "User $user already exists. Do you want to continue? "
     read ANSWER
     if [  $ANSWER != "y" -a $ANSWER != "Y" ]; then
 	echo "Finish."
@@ -194,9 +190,10 @@ echo "$user:$password" | chpasswd
 
 cat <<EOF >/tmp/creasiti_finalprint
 ###### UTENTE DI SISTEMA #######
-Nuovo utente: $user
-Password:     $password
-Home utente:/var/www/site_${SITE_FQDN}
+
+ Nuovo utente:  $user
+ Password:      $password
+ Home utente:   /var/www/site_${SITE_FQDN}
 
 EOF
 if [ ! -d /var/www/site_${SITE_FQDN}/${SITE_FQDN} ]
@@ -214,5 +211,6 @@ if [ -n "$cdatabase" ]
     create_database $user $password $SITE_FQDN
 fi
 
-
+echo -e "\n\n\n\n\n"
 cat /tmp/creasiti_finalprint
+
