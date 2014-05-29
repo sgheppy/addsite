@@ -17,6 +17,7 @@ EOF
 exit 0
 }
 
+# Function to get 'Yes or No or Quit' answer from user
 yornorq() {
   shopt -s nocasematch
   until [[ "$ans" == [ynq] ]]
@@ -31,6 +32,7 @@ yornorq() {
   shopt -u nocasematch
 }
 
+#Function to generate user password
 genpasswd() {
     local PWD_LENGHT=$1
     
@@ -38,6 +40,7 @@ genpasswd() {
     tr -dc A-Za-z0-9_ < /dev/urandom | head -c $PWD_LENGHT | xargs
 }
 
+#Function to create virtualhost
 write_virtualhost() {
     local SITE_FQDN=${1}
     local SITE=$(echo $SITE_FQDN | cut -d. -f1)
@@ -98,6 +101,7 @@ EOF
  }
 
 
+#Function to create database
 create_database() {
     echo  "Create Database..."
     local USER=${1:0:13}$(( $RANDOM % 99 ))
@@ -140,6 +144,8 @@ EOF
     done
 
 }
+
+# MAIN Script 
 
 while getopts "hd" flag; do
     case "$flag" in
